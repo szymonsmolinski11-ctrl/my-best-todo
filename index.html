@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="To-Do & Music">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23667eea' width='192' height='192'/><text x='50%' y='50%' font-size='100' font-weight='bold' text-anchor='middle' dy='.3em' fill='white' font-family='Arial'>TD</text></svg>">
+    <title>Colorful To-Do List & Music Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        header h1 {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .install-banner {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .install-banner.show {
+            display: flex;
+        }
+
+        .install-banner p {
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .install-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .install-btn {
+            flex: 1;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .install-btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .install-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .install-btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .install-btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* TO-DO SECTION */
+        .todo-section,
+        .music-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .todo-section h2,
+        .music-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .todo-input,
+        .edit-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .todo-input:focus,
+        .edit-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .add-btn,
+        .save-btn,
+        .cancel-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* FILTER BUTTONS */
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* TO-DO LIST */
+        .todo-list {
+            list-style: none;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 10px;
+            border-left: 5px solid;
+            transition: all 0.3s ease;
+            animation: slideInLeft 0.4s ease-out;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .todo-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Color variations for to-dos */
+        .todo-item.color-1 { border-left-color: #FF6B6B; background: rgba(255, 107, 107, 0.05); }
+        .todo-item.color-2 { border-left-color: #4ECDC4; background: rgba(78, 205, 196, 0.05); }
+        .todo-item.color-3 { border-left-color: #FFE66D; background: rgba(255, 230, 109, 0.05); }
+        .todo-item.color-4 { border-left-color: #95E1D3; background: rgba(149, 225, 211, 0.05); }
+        .todo-item.color-5 { border-left-color: #F38181; background: rgba(243, 129, 129, 0.05); }
+        .todo-item.color-6 { border-left-color: #AA96DA; background: rgba(170, 150, 218, 0.05); }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .todo-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .todo-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .todo-text {
+            font-size: 1em;
+            color: #333;
+            transition: all 0.3s ease;
+            word-break: break-word;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .edit-btn,
+        .delete-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .edit-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #ee5a52;
+            transform: scale(1.05);
+        }
+
+        /* MUSIC SECTION */
+        .upload-area {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+
+        .upload-label:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-label span:last-child {
+            text-align: center;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .music-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .music-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+            animation: slideInLeft 0.4s ease-out;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .music-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .music-icon {
+            font-size: 2em;
+        }
+
+        .music-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .music-name {
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .music-size {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .remove-music {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .remove-music:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 1.1em;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: #999;
+            float: right;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .save-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .cancel-btn {
+            flex: 1;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .cancel-btn:hover {
+            background: #d0d0d0;
+        }
+
+        /* ANIMATIONS */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 30% auto;
+            }
+
+            .todo-actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .edit-btn, .delete-btn {
+                padding: 5px 10px;
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="installBanner" class="install-banner">
+            <p>📱 Install this app on your device!</p>
+            <div class="install-buttons">
+                <button class="install-btn install-btn-primary" id="installBtn">Install App</button>
+                <button class="install-btn install-btn-secondary" id="dismissBtn">Not Now</button>
+            </div>
+        </div>
+
+        <header>
+            <h1>✨ My To-Do & Music Hub</h1>
+        </header>
+
+        <div class="main-content">
+            <!-- TO-DO SECTION -->
+            <section class="todo-section">
+                <h2>📝 My To-Do List</h2>
+                
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="todoInput" 
+                        placeholder="Add a new task..." 
+                        class="todo-input"
+                    >
+                    <button id="addBtn" class="add-btn">Add Task</button>
+                </div>
+
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="active">Active</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                </div>
+
+                <ul id="todoList" class="todo-list"></ul>
+
+                <div id="emptyState" class="empty-state">
+                    <p>No tasks yet. Add one to get started! 🚀</p>
+                </div>
+            </section>
+
+            <!-- MUSIC SECTION -->
+            <section class="music-section">
+                <h2>🎵 Music Manager</h2>
+                
+                <div class="upload-area">
+                    <input 
+                        type="file" 
+                        id="musicInput" 
+                        accept="audio/*" 
+                        multiple
+                        class="file-input"
+                    >
+                    <label for="musicInput" class="upload-label">
+                        <span class="upload-icon">🎶</span>
+                        <span>Drag & drop music files here or click to browse</span>
+                    </label>
+                </div>
+
+                <div id="musicList" class="music-list"></div>
+
+                <div id="emptyMusic" class="empty-state">
+                    <p>No music uploaded yet. Add your favorite tracks! 🎸</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Edit Task</h3>
+            <input type="text" id="editInput" placeholder="Edit your task..." class="edit-input">
+            <div class="modal-buttons">
+                <button id="saveBtn" class="save-btn">Save</button>
+                <button id="cancelBtn" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== PWA INSTALLATION ====================
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const dismissBtn = document.getElementById('dismissBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.classList.add('show');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.classList.remove('show');
+            }
+        });
+
+        dismissBtn.addEventListener('click', () => {
+            installBanner.classList.remove('show');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            installBanner.classList.remove('show');
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+
+        // ==================== TO-DO LIST FUNCTIONALITY ====================
+        const todoInput = document.getElementById('todoInput');
+        const addBtn = document.getElementById('addBtn');
+        const todoList = document.getElementById('todoList');
+        const emptyState = document.getElementById('emptyState');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        // MUSIC FUNCTIONALITY
+        const musicInput = document.getElementById('musicInput');
+        const uploadLabel = document.querySelector('.upload-label');
+        const musicListContainer = document.getElementById('musicList');
+        const emptyMusic = document.getElementById('emptyMusic');
+
+        // MODAL FUNCTIONALITY
+        const modal = document.getElementById('editModal');
+        const editInput = document.getElementById('editInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const closeBtn = document.querySelector('.close');
+
+        let todos = [];
+        let musicFiles = [];
+        let editingIndex = null;
+        let currentFilter = 'all';
+
+        const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6'];
+
+        // ==================== TO-DO FUNCTIONS ====================
+
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        function loadTodos() {
+            const saved = localStorage.getItem('todos');
+            todos = saved ? JSON.parse(saved) : [];
+            renderTodos();
+        }
+
+        function addTodo() {
+            const text = todoInput.value.trim();
+            if (!text) return;
+
+            const todo = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                colorIndex: todos.length % colors.length
+            };
+
+            todos.unshift(todo);
+            saveTodos();
+            todoInput.value = '';
+            renderTodos();
+            todoInput.focus();
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(todo => todo.id !== id);
+            saveTodos();
+            renderTodos();
+        }
+
+        function toggleComplete(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                saveTodos();
+                renderTodos();
+            }
+        }
+
+        function openEditModal(id) {
+            editingIndex = id;
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                editInput.value = todo.text;
+                modal.style.display = 'block';
+                editInput.focus();
+            }
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            editingIndex = null;
+            editInput.value = '';
+        }
+
+        function saveTodoEdit() {
+            if (editingIndex === null) return;
+            
+            const newText = editInput.value.trim();
+            if (!newText) return;
+
+            const todo = todos.find(t => t.id === editingIndex);
+            if (todo) {
+                todo.text = newText;
+                saveTodos();
+                renderTodos();
+                closeModal();
+            }
+        }
+
+        function renderTodos() {
+            todoList.innerHTML = '';
+            
+            let filteredTodos = todos;
+            if (currentFilter === 'active') {
+                filteredTodos = todos.filter(t => !t.completed);
+            } else if (currentFilter === 'completed') {
+                filteredTodos = todos.filter(t => t.completed);
+            }
+
+            if (filteredTodos.length === 0) {
+                emptyState.style.display = 'block';
+                todoList.innerHTML = '';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            filteredTodos.forEach(todo => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${colors[todo.colorIndex]} ${todo.completed ? 'completed' : ''}`;
+                
+                li.innerHTML = `
+                    <div class="todo-content">
+                        <input 
+                            type="checkbox" 
+                            class="todo-checkbox" 
+                            ${todo.completed ? 'checked' : ''}
+                            onchange="toggleComplete(${todo.id})"
+                        >
+                        <span class="todo-text">${escapeHtml(todo.text)}</span>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="edit-btn" onclick="openEditModal(${todo.id})">✏️ Edit</button>
+                        <button class="delete-btn" onclick="deleteTodo(${todo.id})">🗑️ Delete</button>
+                    </div>
+                `;
+                
+                todoList.appendChild(li);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== MUSIC FUNCTIONS ====================
+
+        function saveMusicFiles() {
+            const musicData = musicFiles.map(file => ({
+                name: file.name,
+                size: file.size,
+                type: file.type
+            }));
+            localStorage.setItem('musicFiles', JSON.stringify(musicData));
+        }
+
+        function loadMusicFiles() {
+            const saved = localStorage.getItem('musicFiles');
+            if (saved) {
+                const data = JSON.parse(saved);
+                musicFiles = data.map(item => ({
+                    name: item.name,
+                    size: item.size,
+                    type: item.type
+                }));
+                renderMusicList();
+            }
+        }
+
+        function addMusicFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('audio/')) {
+                    musicFiles.push({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type
+                    });
+                }
+            });
+
+            saveMusicFiles();
+            renderMusicList();
+            musicInput.value = '';
+        }
+
+        function removeMusicFile(index) {
+            musicFiles.splice(index, 1);
+            saveMusicFiles();
+            renderMusicList();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function renderMusicList() {
+            musicListContainer.innerHTML = '';
+            
+            if (musicFiles.length === 0) {
+                emptyMusic.style.display = 'block';
+                return;
+            }
+
+            emptyMusic.style.display = 'none';
+
+            musicFiles.forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'music-item';
+                
+                // Get file extension for better display
+                const extension = file.name.split('.').pop().toUpperCase();
+                
+                div.innerHTML = `
+                    <div class="music-info">
+                        <div class="music-icon">🎵</div>
+                        <div class="music-details">
+                            <div class="music-name">${escapeHtml(file.name)}</div>
+                            <div class="music-size">${formatFileSize(file.size)} • ${extension}</div>
+                        </div>
+                    </div>
+                    <button class="remove-music" onclick="removeMusicFile(${index})">Remove</button>
+                `;
+                
+                musicListContainer.appendChild(div);
+            });
+        }
+
+        // ==================== EVENT LISTENERS ====================
+
+        // TO-DO EVENTS
+        addBtn.addEventListener('click', addTodo);
+        todoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTodo();
+        });
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderTodos();
+            });
+        });
+
+        // MODAL EVENTS
+        saveBtn.addEventListener('click', saveTodoEdit);
+        cancelBtn.addEventListener('click', closeModal);
+        closeBtn.addEventListener('click', closeModal);
+
+        editInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveTodoEdit();
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // MUSIC EVENTS
+        musicInput.addEventListener('change', (e) => {
+            addMusicFiles(e.target.files);
+        });
+
+        // Drag and drop for music
+        uploadLabel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadLabel.style.borderColor = '#764ba2';
+        });
+
+        uploadLabel.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadLabel.style.borderColor = '#667eea';
+        });
+
+        uploadLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadLabel.style.borderColor = '#667eea';
+            addMusicFiles(e.dataTransfer.files);
+        });
+
+        // ==================== INITIALIZE ====================
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTodos();
+            loadMusicFiles();
+        });
+    </script>
+</body>
+</html>
